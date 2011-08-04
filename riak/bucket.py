@@ -253,6 +253,12 @@ class RiakBucket(object):
         r = self.get_r(r)
         return obj.reload(r)
 
+    def __getitem__(self, key):
+        """
+        Shortcut to get
+        """
+        return self.get(key)
+
     def get_binary(self, key, r=None):
         """
         Retrieve a binary/string object from Riak.

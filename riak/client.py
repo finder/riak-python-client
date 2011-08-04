@@ -237,6 +237,12 @@ class RiakClient(object):
         """
         return RiakBucket(self, name)
 
+    def __getitem__(self, name):
+        """
+        Shortcut to bucket
+        """
+        return self.bucket(name)
+
     def is_alive(self):
         """
         Check if the Riak server for this ``RiakClient`` instance is alive.

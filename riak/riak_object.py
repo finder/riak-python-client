@@ -21,6 +21,18 @@ import types, copy, re
 from metadata import *
 from riak import RiakError
 
+def check_dict(f):
+    def newf(cls, *args, **kwargs):
+        ctype = cls._metadata.get(MD_CTYPE, None)
+        if cls._is_multi:
+            raise RiakError("Multiple objects return, check siblings")
+        if ctype and ctype != 'application/json':
+            raise RiakError("Invalid content type for dictionary access")
+        elif ctype is None:
+            cls.set_data({})
+        return f(cls, *args, **kwargs)
+    return newf
+
 class RiakObject(object):
     """
     The RiakObject holds meta information about a Riak object, plus the
@@ -51,6 +63,13 @@ class RiakObject(object):
         self._links = []
         self._siblings = []
         self._exists = False
+        self._is_multi = False
+
+    def is_multi(self):
+        """
+        Returns if this was a multi return with multiple vector clocks
+        """
+        return self._is_multi
 
     def get_bucket(self):
         """
@@ -80,6 +99,73 @@ class RiakObject(object):
         :rtype: array or string
         """
         return self._data
+
+    @check_dict
+    def __getitem__(self, key):
+        """
+        Returns the key of a json dictionary if this type is json
+        """
+        return self.get_data()[key]
+
+    @check_dict
+    def __setitem__(self, key, value):
+        """
+        Convenience function used to update dictionary if this is of type json
+        """
+        if not self._data:
+            self.set_data({key:value})
+        else:
+            self._data[key] = value
+
+    @check_dict
+    def __delitem__(self, key):
+        """
+        Convenience function to delete key of internal dict
+        """
+        if self._data and isinstance(self._data, dict):
+            del self._data[key]
+
+    @check_dict
+    def __iter__(self):
+        """
+        Iterates keys as dict
+        """
+        if self._data and isinstance(self._data, dict):
+            return self._data.__iter__()
+        return iter({})
+
+    def iterkeys(self):
+        """
+        Iterates keys
+        """
+        return self.__iter__()
+
+    @check_dict
+    def iteritems(self):
+        """
+        Returns self._data.iteritems()
+        """
+        if self._data and isinstance(self._data, dict):
+            return self._data.iteritems()
+        return {}.iteritems()
+
+    @check_dict
+    def keys(self):
+        """
+        Returns self._data.keys
+        """
+        if self._data and isinstance(self._data, dict):
+            return self._data.keys()
+        return []
+
+    @check_dict
+    def values(self):
+        """
+        Returns self._data.values
+        """
+        if self._data and isinstance(self._data, dict):
+            return self._data.values()
+        return []
 
     def set_data(self, data):
         """
@@ -374,6 +460,7 @@ class RiakObject(object):
         if Result is None:
             return self
         elif type(Result) == types.ListType:
+            self._is_multi = True
             self.set_siblings(Result)
         elif type(Result) == types.TupleType:
             (vclock, contents) = Result
