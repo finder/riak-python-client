@@ -38,8 +38,8 @@ class RiakBucket(object):
         :param name: The bucket name
         :type name: string
         """
-        if isinstance(name, unicode):
-            raise TypeError('Unicode bucket names are not supported.')
+        if not isinstance(name, unicode):
+            name = unicode(name)
 
         self._client = client
         self._name = name
