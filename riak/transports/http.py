@@ -411,9 +411,9 @@ class RiakHttpTransport(RiakTransport) :
         if not headers:
             headers = {}
         if HAS_PYCURL:
-            return cls.pycurl_request(method, host, port, url, headers, obj)
+            return cls.pycurl_request(method, host, port, str(url), headers, obj)
         else:
-            return cls.httplib_request(method, host, port, url, headers, obj)
+            return cls.httplib_request(method, host, port, str(url), headers, obj)
 
 
     @classmethod
