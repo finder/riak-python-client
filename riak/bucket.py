@@ -429,6 +429,12 @@ class RiakBucket(object):
             mimetype = 'application/octet-stream'
         return self.new_binary(key, binary_data, mimetype)
     
+    def search(self, *args):
+        """
+        Convenience function to search bucket
+        """
+        return self._client.search(self._name, *args)
+
     def search_enabled(self):
         """
         Returns True if the search precommit hook is enabled for this bucket.
